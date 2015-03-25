@@ -505,7 +505,7 @@ simulation.killBird = function ()
 
 simulation.updateDebug = function ()
 {
-    simulation.debug = document.getElementById("debug").selectedIndex
+    simulation.debug = document.getElementById("debug").selectedIndex;
 }
 
 simulation.init = function ()
