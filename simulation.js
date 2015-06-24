@@ -17,8 +17,8 @@
 
 	function Flock()
 	{
-	    this.boids = new Array()
-	    this.obstacles = new Array()
+	    this.boids = new Array();
+	    this.obstacles = new Array();
 
 	    this.addBoid = function (boid)
 	    {
@@ -41,43 +41,42 @@
 					this.boids[i] = this.boids[this.boids.length - 1];
 					this.boids[this.boids.length - 1] = temp;
 					this.delBoid();
-					//console.log("bird died!")
 			    }
 			}
 	    }
 
 	    this.draw = function (ctx, width, height)
 	    {
-		var i
-		var accSpeed = 0
-		var speeds = []
+			var i;
+			var accSpeed = 0;
+			var speeds = [];
 
-		for (i = this.boids.length - 1; i >= 0; i--) {
-		    this.boids[i].draw(ctx, width, height)
-		    var speed = this.boids[i].vel.mag()
-		    speeds.push(speed)
-		    accSpeed += speed
-		}
-		for (i = this.obstacles.length - 1; i >= 0; i--) {
-		    this.obstacles[i].draw(ctx)
-		}
+			for (i = this.boids.length - 1; i >= 0; i--) {
+			    this.boids[i].draw(ctx, width, height);
+			    var speed = this.boids[i].vel.mag();
+			    speeds.push(speed);
+			    accSpeed += speed;
+			}
+			for (i = this.obstacles.length - 1; i >= 0; i--) {
+			    this.obstacles[i].draw(ctx);
+			}
 
-		/* Statistics. */
-		/*ctx.save()
-		ctx.font = "16pt Arial"
-		var avgSpeed = accSpeed / this.boids.length
-		var speedStd = 0
-		for (i = 0; i < speeds.length; i++) {
-		    speedStd += (speeds[i] - avgSpeed) * (speeds[i] - avgSpeed)
-		}
-		speedStd = Math.sqrt(speedStd / speeds.length)
+			/* Statistics. */
+			/*ctx.save()
+			ctx.font = "16pt Arial"
+			var avgSpeed = accSpeed / this.boids.length
+			var speedStd = 0
+			for (i = 0; i < speeds.length; i++) {
+			    speedStd += (speeds[i] - avgSpeed) * (speeds[i] - avgSpeed)
+			}
+			speedStd = Math.sqrt(speedStd / speeds.length)
 
-		var height = ctx.canvas.height - ctx.canvas.offsetTop
-		var textAvg = "Average speed: " + avgSpeed.toFixed(2) + " p/f"
-		var textStd = "Standard deviation: " + speedStd.toFixed(2) + " p/f"
-		ctx.fillText(textAvg, 10, height - 10 - 22)
-		ctx.fillText(textStd, 10, height - 10)
-		ctx.restore()*/
+			var height = ctx.canvas.height - ctx.canvas.offsetTop
+			var textAvg = "Average speed: " + avgSpeed.toFixed(2) + " p/f"
+			var textStd = "Standard deviation: " + speedStd.toFixed(2) + " p/f"
+			ctx.fillText(textAvg, 10, height - 10 - 22)
+			ctx.fillText(textStd, 10, height - 10)
+			ctx.restore()*/
 	    }
 	}
 
@@ -102,85 +101,85 @@
 
 	function Boid(canvas, x, y, angle, maxSpeed, maxSteeringForce, viewingAngle)
 	{
-	    this.dead = false
-	    this.pos = new Vector(x, y)
-	    this.maxSpeed = maxSpeed || 1
-	    this.speedLimit = 1.5 * this.maxSpeed /* Testing */
-	    this.maxSteeringForce = maxSteeringForce || 0.065
+	    this.dead = false;
+	    this.pos = new Vector(x, y);
+	    this.maxSpeed = maxSpeed || 1;
+	    this.speedLimit = 1.5 * this.maxSpeed; /* Testing */
+	    this.maxSteeringForce = maxSteeringForce || 0.065;
 	    if (viewingAngle) {
-		this.viewingAngle = viewingAngle * (Math.PI / 180)
+			this.viewingAngle = viewingAngle * (Math.PI / 180);
 	    } else {
-		this.viewingAngle = 270 * (Math.PI/180) /* 270 degrees */
+			this.viewingAngle = 270 * (Math.PI/180); /* 270 degrees */
 	    }
 
 	    //console.log(this.maxSteeringForce, this.maxSpeed)
-	    this.canvas = canvas
+	    this.canvas = canvas;
 
-	    var angle = angle * (Math.PI / 180)
+	    var angle = angle * (Math.PI / 180);
 
 	    /* Velocity */
-	    this.vel = new Vector(Math.cos(angle), Math.sin(angle))
+	    this.vel = new Vector(Math.cos(angle), Math.sin(angle));
 	    /* Acceleration (at each instant) */
-	    this.acc = new Vector(0, 0)
+	    this.acc = new Vector(0, 0);
 
-	    this.wandering = false
+	    this.wandering = false;
 
 	    this.simulate = function (boids, obstacles) {
-		this.flock(boids, obstacles) /* Simulation lives all here. */
-		if (this.dead) {
-		    return
-		}
-		this.update()
-	    }
+			this.flock(boids, obstacles); /* Simulation lives all here. */
+			if (this.dead) {
+		    	return;
+			}
+			this.update();
+	    };
 
 	    this.update = function ()
 	    {
-		if (this.vel.add(this.acc).mag() > 0) {
-		    this.vel.iadd(this.acc)
-		}
-		if (this.vel.mag() > 0) {
-		    this.vel.ilimit(this.speedLimit)
-		}
+			if (this.vel.add(this.acc).mag() > 0) {
+			    this.vel.iadd(this.acc);
+			}
+			if (this.vel.mag() > 0) {
+			    this.vel.ilimit(this.speedLimit);
+			}
 
-		this.pos.x += this.vel.x
-		this.pos.y -= this.vel.y /* 0 at top left */
-		/* Reset acceleration */
-		this.acc.x = 0
-		this.acc.y = 0
-	    }
+			this.pos.x += this.vel.x;
+			this.pos.y -= this.vel.y;/* 0 at top left */
+			/* Reset acceleration */
+			this.acc.x = 0;
+			this.acc.y = 0;
+	    };
 
 	    this.flock = function (boids, obstacles)
 	    {
-		var avoid = this.avoidObstacles(obstacles)
+			var avoid = this.avoidObstacles(obstacles)
 
-		if (avoid === null) {
-		    this.dead = true
-		    return
-		}
+			if (avoid === null) {
+			    this.dead = true
+			    return
+			}
 
-		this.acc.iadd(avoid.mul(simulation.effect.avoid))
-		if (avoid.mag() == 0) {
-		    /* Only apply other rules if the boid doesn't need to
-		       avoide an obstacle. */
-		    var separate = this.separation(boids)
-		    var align = this.alignment(boids)
-		    var cohesion = this.cohesion(boids)
+			this.acc.iadd(avoid.mul(simulation.effect.avoid))
+			if (avoid.mag() == 0) {
+			    /* Only apply other rules if the boid doesn't need to
+			       avoide an obstacle. */
+			    var separate = this.separation(boids)
+			    var align = this.alignment(boids)
+			    var cohesion = this.cohesion(boids)
 
-	    	    this.acc.iadd(separate.mul(simulation.effect.separate))
-		    this.acc.iadd(align.mul(simulation.effect.align))
-		    this.acc.iadd(cohesion.mul(simulation.effect.cohesion))
+		    	    this.acc.iadd(separate.mul(simulation.effect.separate))
+			    this.acc.iadd(align.mul(simulation.effect.align))
+			    this.acc.iadd(cohesion.mul(simulation.effect.cohesion))
 
-		    if (this.acc.mag() == 0) {
-			/* Only wander if other rules weren't applied or didn't
-			   have any effect. */
-			this.acc = this.wander().mul(simulation.effect.wander)
-			this.wandering = true
-		    } else {
-			this.wandering = false
-		    }
-		} else {
-		    this.wandering = false
-		}
+			    if (this.acc.mag() == 0) {
+				/* Only wander if other rules weren't applied or didn't
+				   have any effect. */
+				this.acc = this.wander().mul(simulation.effect.wander)
+				this.wandering = true
+			    } else {
+				this.wandering = false
+			    }
+			} else {
+			    this.wandering = false
+			}
 	    }
 
 	    this.wander = function ()
