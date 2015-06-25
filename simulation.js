@@ -1,17 +1,22 @@
 	var simulation 							= {};
 
 	simulation.prng 						= null;
-	simulation.bird_length 					= 50;
+	simulation.bird_length 					= 25;
 	simulation.bird_wingspan 				= 25;
 	simulation.bird_viewrange 				= (simulation.bird_length * simulation.bird_wingspan) / 4;
 	simulation.bird_obstaclerange 			= 12 * simulation.bird_length;
 	simulation.bird_neighborhood 			= simulation.bird_viewrange;
 	simulation.bird_separaterange 			= simulation.bird_neighborhood / 2.5;
 	simulation.debug 						= false;
-	simulation.effect = {separate : 1, cohesion : 0.75, align : 0.7, wander : 1,
-			     avoid : 1}
-	simulation.population = 0
-	simulation.flock = null
+	simulation.effect 						= {
+												separate : 1, 
+												cohesion : 0.75, 
+												align : 0.7, 
+												wander : 1,
+												avoid : 1
+											};
+	simulation.population 					= 0
+	simulation.flock 						= null
 
 
 	function Flock()
@@ -35,12 +40,6 @@
 			var temp;
 			for (var i = this.boids.length - 1; i >= 0; i--) {
 			    this.boids[i].simulate(this.boids, this.obstacles);
-			    if (this.boids[i].dead) {
-					temp = this.boids[i];
-					this.boids[i] = this.boids[this.boids.length - 1];
-					this.boids[this.boids.length - 1] = temp;
-					this.delBoid();
-			    }
 			}
 	    };
 
@@ -59,24 +58,7 @@
 			for (i = this.obstacles.length - 1; i >= 0; i--) {
 			    this.obstacles[i].draw(ctx);
 			}
-
-			/* Statistics. */
-			/*ctx.save()
-			ctx.font = "16pt Arial"
-			var avgSpeed = accSpeed / this.boids.length
-			var speedStd = 0
-			for (i = 0; i < speeds.length; i++) {
-			    speedStd += (speeds[i] - avgSpeed) * (speeds[i] - avgSpeed)
-			}
-			speedStd = Math.sqrt(speedStd / speeds.length)
-
-			var height = ctx.canvas.height - ctx.canvas.offsetTop
-			var textAvg = "Average speed: " + avgSpeed.toFixed(2) + " p/f"
-			var textStd = "Standard deviation: " + speedStd.toFixed(2) + " p/f"
-			ctx.fillText(textAvg, 10, height - 10 - 22)
-			ctx.fillText(textStd, 10, height - 10)
-			ctx.restore()*/
-	    }
+	    };
 	}
 
 	function Obstacle(x, y, rad)
@@ -269,227 +251,204 @@
 
 
 	    this.inBoidViewRange = function (other) {
-		var theta = Math.atan2(-this.vel.y, this.vel.x)
-		var obst_x = other.pos.x - this.pos.x
-		var obst_y = (this.canvas.height - other.pos.y) - (this.canvas.height - this.pos.y)
-		var obx = obst_x * Math.cos(theta) - obst_y * Math.sin(theta)
-		var oby = obst_x * Math.sin(theta) + obst_y * Math.cos(theta)
+			var theta = Math.atan2(-this.vel.y, this.vel.x);
+			var obst_x = other.pos.x - this.pos.x;
+			var obst_y = (this.canvas.height - other.pos.y) - (this.canvas.height - this.pos.y);
+			var obx = obst_x * Math.cos(theta) - obst_y * Math.sin(theta);
+			var oby = obst_x * Math.sin(theta) + obst_y * Math.cos(theta);
 
-		var a = Math.atan2(-oby, obx)
+			var a = Math.atan2(-oby, obx);
 
-		var min = -this.viewingAngle/2
-		var max = +this.viewingAngle/2
-		return (a < max && a > min)
-	    }
+			var min = -this.viewingAngle/2;
+			var max = +this.viewingAngle/2;
+			return (a < max && a > min);
+	    };
 
 	    /* Rule 1. Collision Avoidance: avoid collision with nearby flockmates. */
 	    this.separation = function (boids)
 	    {
-		var sepRange = simulation.bird_separaterange
-		var steer = new Vector(0, 0)
-		var diff = new Vector(0, 0)
-		var count = 0
+			var sepRange = simulation.bird_separaterange;
+			var steer = new Vector(0, 0);
+			var diff = new Vector(0, 0);
+			var count = 0;
 
-		for (var i = boids.length - 1; i >= 0; i--) {
-		    var other = boids[i]
-		    if (this == other) {
-			continue
-		    }
+			for (var i = boids.length - 1; i >= 0; i--) {
+			    var other = boids[i];
+			    if (this == other) {
+					continue;
+			    }
 
-		    var d = this.pos.euc2d(other.pos)
-		    if (d < sepRange && this.inBoidViewRange(other)) {
-			diff = this.pos.sub(other.pos)
-			diff = diff.unit().div(d)
-			steer.iadd(diff)
-			count++
-		    }
-		}
-		if (count > 0) {
-		    steer.idiv(count)
-		    steer.ilimit(this.maxSteeringForce)
-		}
+			    var d = this.pos.euc2d(other.pos);
+			    if (d < sepRange && this.inBoidViewRange(other)) {
+					diff = this.pos.sub(other.pos);
+					diff = diff.unit().div(d);
+					steer.iadd(diff);
+					count++;
+			    }
+			}
+			if (count > 0) {
+			    steer.idiv(count);
+			    steer.ilimit(this.maxSteeringForce);
+			}
 
-		return steer
-	    }
+			return steer;
+	    };
 
 	    /* Rule 2. Velocity Matching: attempt to match velocity with nearby
 	       flockmates. */
 	    this.alignment = function (boids)
 	    {
-		var neighborDist = simulation.bird_neighborhood
-		var steer = new Vector(0, 0)
-		var count = 0
+			var neighborDist = simulation.bird_neighborhood;
+			var steer = new Vector(0, 0);
+			var count = 0;
 
-		for (var i = boids.length - 1; i >= 0; i--) {
-		    var other = boids[i]
-		    if (other == this) {
-			continue
-		    }
+			for (var i = boids.length - 1; i >= 0; i--) {
+			    var other = boids[i];
+			    if (other == this) {
+					continue;
+			    }
 
-		    var d = this.pos.euc2d(other.pos)
-		    if (d < neighborDist && this.inBoidViewRange(other)) {
-			steer.iadd(other.vel)
-			count++
-		    }
-		}
+			    var d = this.pos.euc2d(other.pos);
+			    if (d < neighborDist && this.inBoidViewRange(other)) {
+					steer.iadd(other.vel);
+					count++;
+			    }
+			}
 
-		if (count > 0) {
-		    steer.idiv(count)
-		    steer.ilimit(this.maxSteeringForce)
-		}
-		return steer
-	    }
+			if (count > 0) {
+			    steer.idiv(count);
+			    steer.ilimit(this.maxSteeringForce);
+			}
+			return steer;
+	    };
 
 	    /* Rule 3. Flock Centering: attempt to stay close to nearby flockmates. */
 	    this.cohesion = function (boids)
 	    {
-		var neighborDist = simulation.bird_neighborhood
-		var mass = new Vector(0, 0)
-		var count = 0
+			var neighborDist = simulation.bird_neighborhood;
+			var mass = new Vector(0, 0);
+			var count = 0;
 
-		for (var i = boids.length - 1; i >= 0; i--) {
-		    var other = boids[i]
-		    if (this == other) {
-			continue
-		    }
+			for (var i = boids.length - 1; i >= 0; i--) {
+			    var other = boids[i];
+			    if (this == other) {
+					continue;
+			    }
 
-		    var d = this.pos.euc2d(other.pos)
-		    if (d < neighborDist && this.inBoidViewRange(other)) {
-			mass.iadd(other.pos)
-			count++
-		    }
-		}
+			    var d = this.pos.euc2d(other.pos);
+			    if (d < neighborDist && this.inBoidViewRange(other)) {
+					mass.iadd(other.pos);
+					count++;
+			    }
+			}
 
-		if (count > 0) {
-		    mass.idiv(count) /* Centre of mass */
-		    mass.ilimit(this.maxSteeringForce)
-		}
-		return mass
+			if (count > 0) {
+			    mass.idiv(count); /* Centre of mass */
+			    mass.ilimit(this.maxSteeringForce);
+			}
+			return mass;
 	    }
 
 
 	    this.draw = function (ctx, width, height)
 	    {
-		if (this.dead) {
-		    return
-		}
+			if (this.dead) {
+			    return;
+			}
 
-		/* Wrap around the available space. */
-		if (this.pos.x < 0) this.pos.x = width
-		if (this.pos.x > width) this.pos.x = 0
-		if (this.pos.y < 0) this.pos.y = height
-		if (this.pos.y > height) this.pos.y = 0
+			/* Wrap around the available space. */
+			if (this.pos.x < 0) 
+				this.pos.x = width;
+			if (this.pos.x > width) 
+				this.pos.x = 0;
+			if (this.pos.y < 0) 
+				this.pos.y = height;
+			if (this.pos.y > height) 
+				this.pos.y = 0;
 
-		var theta = Math.atan2(-this.vel.y, this.vel.x)
+			var theta = Math.atan2(-this.vel.y, this.vel.x);
 
-	    	ctx.save()
+		    ctx.save();
 
-	    	ctx.translate(this.pos.x, this.pos.y)
-		ctx.rotate(theta)
+		    ctx.translate(this.pos.x, this.pos.y);
+			ctx.rotate(theta);
 
-		/* Draw bird. */
-	    	ctx.beginPath()
+			/* Draw bird. */
+		    ctx.beginPath();
 
-		/* Bico */
-		ctx.moveTo(1, -simulation.bird_wingspan / 6.666)
-		ctx.lineTo(simulation.bird_length / 2 - 1, 0)
-		ctx.lineTo(1, simulation.bird_wingspan / 6.666)
+			/* Bico */
+			ctx.moveTo(1, -simulation.bird_wingspan / 6.666);
+			ctx.lineTo(simulation.bird_length / 2 - 1, 0);
+			ctx.lineTo(1, simulation.bird_wingspan / 6.666);
 
-		//ctx.moveTo(0, 0) // Fica mais legal o stroke
-		//ctx.moveTo(3, 0)
-		/* Asa direita */
-		ctx.lineTo(simulation.bird_wingspan/10, simulation.bird_wingspan/10)
-		ctx.lineTo(simulation.bird_wingspan/5, simulation.bird_wingspan/5)
-		ctx.lineTo(0, simulation.bird_wingspan/2)
-		ctx.lineTo(-simulation.bird_length/18, simulation.bird_wingspan/2.222)
-		ctx.lineTo(simulation.bird_length/36, simulation.bird_wingspan/4)
-		ctx.lineTo(0, simulation.bird_wingspan/10)
+			/* Asa direita */
+			ctx.lineTo(simulation.bird_wingspan/10, simulation.bird_wingspan/10);
+			ctx.lineTo(simulation.bird_wingspan/5, simulation.bird_wingspan/5);
+			ctx.lineTo(0, simulation.bird_wingspan/2);
+			ctx.lineTo(-simulation.bird_length/18, simulation.bird_wingspan/2.222);
+			ctx.lineTo(simulation.bird_length/36, simulation.bird_wingspan/4);
+			ctx.lineTo(0, simulation.bird_wingspan/10);
 
-		/* Cauda */
-		var xx = simulation.bird_length/72
-		ctx.lineTo(-simulation.bird_length/4, xx)
-		ctx.lineTo(-simulation.bird_length/3, xx)
-		ctx.lineTo(-simulation.bird_length/2, simulation.bird_length/6)
-		ctx.lineTo(-simulation.bird_length/2, -simulation.bird_length/6)
-		ctx.lineTo(-simulation.bird_length/3, -xx)
-		ctx.lineTo(-simulation.bird_length/4, -xx)
+			/* Cauda */
+			var xx = simulation.bird_length/72;
+			ctx.lineTo(-simulation.bird_length/4, xx);
+			ctx.lineTo(-simulation.bird_length/3, xx)
+			ctx.lineTo(-simulation.bird_length/2, simulation.bird_length/6);
+			ctx.lineTo(-simulation.bird_length/2, -simulation.bird_length/6);
+			ctx.lineTo(-simulation.bird_length/3, -xx);
+			ctx.lineTo(-simulation.bird_length/4, -xx);
 
-		ctx.lineTo(0, -simulation.bird_wingspan/10)
+			ctx.lineTo(0, -simulation.bird_wingspan/10);
 
-		/* Asa esquerda */
-		ctx.lineTo(simulation.bird_length/36, -simulation.bird_wingspan/4)
-		ctx.lineTo(-simulation.bird_length/18, -simulation.bird_wingspan/2.222)
-		ctx.lineTo(0, -simulation.bird_wingspan/2)
-		ctx.lineTo(simulation.bird_wingspan/5, -simulation.bird_wingspan/5)
-		ctx.lineTo(simulation.bird_wingspan/10, -simulation.bird_wingspan/10)
+			/* Asa esquerda */
+			ctx.lineTo(simulation.bird_length/36, -simulation.bird_wingspan/4);
+			ctx.lineTo(-simulation.bird_length/18, -simulation.bird_wingspan/2.222);
+			ctx.lineTo(0, -simulation.bird_wingspan/2);
+			ctx.lineTo(simulation.bird_wingspan/5, -simulation.bird_wingspan/5);
+			ctx.lineTo(simulation.bird_wingspan/10, -simulation.bird_wingspan/10);
 
 
-	    	ctx.closePath()
-		ctx.fill()
+		    ctx.closePath();
+			ctx.fill();
 
-		/* Draw "debugging" arc for bird view. */
-		if (simulation.debug) {
-		    if (this.wandering === true) {
-			ctx.strokeStyle = "#ccc"
-		    } else {
-			ctx.styokeStyle = "white"
-		    }
-		    ctx.moveTo(0, 0)
-		    //ctx.arc(0, 0, simulation.bird_neighborhood, 0, 2 * Math.PI, false)
-		    ctx.arc(0, 0, simulation.bird_neighborhood,
-			    -this.viewingAngle/2, this.viewingAngle/2, false)
-		    ctx.lineTo(0, 0)
-		    ctx.arc(0, 0, simulation.bird_separaterange,
-			    -this.viewingAngle/2, this.viewingAngle/2, false)
-		    if (simulation.debug == 2) {
-			/* Obstacle avoidance "cone". */
-			ctx.rect(-simulation.bird_length/2,
-				 -simulation.bird_wingspan/2,
-				 simulation.bird_length, simulation.bird_wingspan)
-			ctx.rect(-simulation.bird_length/2,
-				 -simulation.bird_wingspan/2,
-				 simulation.bird_obstaclerange +
-				 simulation.bird_length/2,
-				 simulation.bird_wingspan)
-			ctx.moveTo(0, 0)
-			ctx.lineTo(simulation.bird_obstaclerange, 0)
-			//ctx.strokeStyle = "red"
-			//ctx.stroke()
-		    }
-		    ctx.stroke()
-		}
+			/* Draw "debugging" arc for bird view. */
+			if (simulation.debug) {
+			    if (this.wandering === true) {
+					ctx.strokeStyle = "#ccc";
+			    } else {
+					ctx.styokeStyle = "white";
+			    }
+			    ctx.moveTo(0, 0);
+			    //ctx.arc(0, 0, simulation.bird_neighborhood, 0, 2 * Math.PI, false)
+			    ctx.arc(0, 0, simulation.bird_neighborhood,-this.viewingAngle/2, this.viewingAngle/2, false);
+			    ctx.lineTo(0, 0);
+			    ctx.arc(0, 0, simulation.bird_separaterange,-this.viewingAngle/2, this.viewingAngle/2, false);
+			    if (simulation.debug == 2) {
+					/* Obstacle avoidance "cone". */
+					ctx.rect(-simulation.bird_length/2,-simulation.bird_wingspan/2,simulation.bird_length, simulation.bird_wingspan);
+					ctx.rect(-simulation.bird_length/2,-simulation.bird_wingspan/2,simulation.bird_obstaclerange + simulation.bird_length/2,simulation.bird_wingspan);
+					ctx.moveTo(0, 0);
+					ctx.lineTo(simulation.bird_obstaclerange, 0);
+			    }
+			    ctx.stroke();
+			}
 
-		ctx.restore()
-	    }
+			ctx.restore();
+	    };
 	}
 
 	simulation.updateEffect = function (value)
 	{
-	    var effect = document.getElementById("effect")
-	    simulation.effect[effect.value] = value / 100
-	    document.getElementById("rangeText").innerHTML = value
-	}
+	    var effect = document.getElementById("effect");
+	    simulation.effect[effect.value] = value / 100;
+	};
 
 	simulation.updateEffectView = function (effect)
 	{
 	    var value = simulation.effect[effect] * 100
 	    if (isNaN(value))
-		return
-	    document.getElementById("rangeInput").value = value
-	    document.getElementById("rangeText").innerHTML = value
-	}
-
-	simulation.killBird = function ()
-	{
-	    if (simulation.population > 0) {
-		simulation.flock.delBoid()
-	    }
-	}
-
-	simulation.updateDebug = function ()
-	{
-	    simulation.debug = document.getElementById("debug").selectedIndex;
-	}
+			return;
+	};
 
 	simulation.init = function ()
 	{
@@ -505,9 +464,6 @@
 
 	    document.addEventListener("click", addObject, false);
 	    window.addEventListener("resize", adjustAndRedraw, false);
-
-	    //document.getElementById("rangeText").innerHTML = 100 *simulation.effect.separate;
-	    //document.getElementById("rangeInput").value = 100 *simulation.effect.separate;
 
 	    simulation.flock = new Flock();
 
@@ -564,6 +520,6 @@
 			canvas.height = window.innerHeight;
 			redraw();
 	    }
-	}
+	};
 
 	window.onload = simulation.init;
