@@ -1,14 +1,13 @@
-	var simulation = {}
+	var simulation 							= {};
 
-	simulation.prng = null
-	simulation.bird_length = 50
-	simulation.bird_wingspan = 25
-	simulation.bird_viewrange = (simulation.bird_length *
-				     simulation.bird_wingspan) / 4
-	simulation.bird_obstaclerange = 12 * simulation.bird_length
-	simulation.bird_neighborhood = simulation.bird_viewrange
-	simulation.bird_separaterange = simulation.bird_neighborhood / 2.5
-	simulation.debug = false
+	simulation.prng 						= null;
+	simulation.bird_length 					= 50;
+	simulation.bird_wingspan 				= 25;
+	simulation.bird_viewrange 				= (simulation.bird_length * simulation.bird_wingspan) / 4;
+	simulation.bird_obstaclerange 			= 12 * simulation.bird_length;
+	simulation.bird_neighborhood 			= simulation.bird_viewrange;
+	simulation.bird_separaterange 			= simulation.bird_neighborhood / 2.5;
+	simulation.debug 						= false;
 	simulation.effect = {separate : 1, cohesion : 0.75, align : 0.7, wander : 1,
 			     avoid : 1}
 	simulation.population = 0
@@ -24,12 +23,12 @@
 	    {
 			this.boids.push(boid);
 			simulation.population++;
-	    }
+	    };
 
 	    this.addObstacle = function(obstacle)
 	    {
 			this.obstacles.push(obstacle);
-	    }
+	    };
 
 	    this.update = function ()
 	    {
@@ -43,7 +42,7 @@
 					this.delBoid();
 			    }
 			}
-	    }
+	    };
 
 	    this.draw = function (ctx, width, height)
 	    {
@@ -184,94 +183,89 @@
 
 	    this.wander = function ()
 	    {
-		/* XXX Experimental. */
-		var wanderRad = 17
-		var wanderLength = 50
+			/* XXX Experimental. */
+			var wanderRad = 17;
+			var wanderLength = 50;
 
-		var direction = this.vel.unit()
-		var center = this.pos.add(direction.mul(wanderLength))
-		var wanderTheta = -Math.PI/2 + simulation.prng() * Math.PI
-		var wanderx = wanderRad * Math.cos(wanderTheta)
-		var wandery = wanderRad * Math.sin(-wanderTheta)
-		var target = center.add(new Vector(wanderx, wandery))
-		return this.seek(target, this.pos)
-	    }
+			var direction = this.vel.unit();
+			var center = this.pos.add(direction.mul(wanderLength));
+			var wanderTheta = -Math.PI/2 + simulation.prng() * Math.PI;
+			var wanderx = wanderRad * Math.cos(wanderTheta);
+			var wandery = wanderRad * Math.sin(-wanderTheta);
+			var target = center.add(new Vector(wanderx, wandery));
+			return this.seek(target, this.pos);
+	    };
 
 	    this.seek = function (target, pos)
 	    {
-		var e = target.sub(pos)
-	    	//console.log(e, target, pos)
-		var dist = e.mag()
-		//console.log(dist, e)
-		if (dist > 0) {
-		    e = e.unit()
-	            e.imul(this.maxSpeed)
-	            return e.sub(this.vel).limit(this.maxSteeringForce)
-		}
-	    	return new Vector(0, 0)
-	    }
+			var e = target.sub(pos);
+			var dist = e.mag();
+			
+			if (dist > 0) {
+			    e = e.unit();
+		        e.imul(this.maxSpeed);
+		        return e.sub(this.vel).limit(this.maxSteeringForce);
+			}
+		   	return new Vector(0, 0);
+	    };
 
 
 	    this.avoidObstacles = function (obstacles)
 	    {
-		var velUnit = this.vel.unit()
+			var velUnit = this.vel.unit();
 
-		var lookahead = simulation.bird_obstaclerange + simulation.bird_wingspan
-		var forward = velUnit.mul(lookahead)
-		forward = this.pos.add(new Vector(forward.x, -forward.y))
+			var lookahead = simulation.bird_obstaclerange + simulation.bird_wingspan;
+			var forward = velUnit.mul(lookahead);
+			forward = this.pos.add(new Vector(forward.x, -forward.y));
 
-		var nearest = null
-		var force = new Vector(0, 0)
+			var nearest = null;
+			var force = new Vector(0, 0);
 
-		for (var i = obstacles.length - 1; i >= 0; i--) {
-		    var obstacle = obstacles[i]
-		    var radius = obstacle.rad + simulation.bird_wingspan/2
+			for (var i = obstacles.length - 1; i >= 0; i--) {
+			    var obstacle = obstacles[i];
+			    var radius = obstacle.rad + simulation.bird_wingspan/2;
 
-		    if (this.pos.euc2d(obstacle) < obstacle.rad) {
-			/* Bird hit obstacle, and died :| */
-			return null
-		    }
-		    /* Warning: Not following Javascript canvas notation here. */
-		    var theta = Math.atan2(-this.vel.y, this.vel.x)
-		    var obst_x = obstacle.x - this.pos.x
-		    var obst_y = (this.canvas.height - obstacle.y) - (this.canvas.height - this.pos.y)
-		    var obx = obst_x * Math.cos(theta) - obst_y * Math.sin(theta)
-		    var oby = obst_x * Math.sin(theta) + obst_y * Math.cos(theta)
-		    //console.log([this.pos.x, this.pos.y], [obst_x, obst_y], obx, oby)
-		    //console.log(obx)
-		    if (obx < lookahead && obx > 0) {
-			if (Math.abs(oby) < obstacle.rad + simulation.bird_wingspan/2) {
-			    if (nearest !== null && obx - obstacle.rad >= nearest) {
-				continue;
+			    if (this.pos.euc2d(obstacle) < obstacle.rad) {
+					/* Bird hit obstacle, and died :| */
+					return null;
 			    }
-			    //console.log("hit")
+			    /* Warning: Not following Javascript canvas notation here. */
+			    var theta = Math.atan2(-this.vel.y, this.vel.x);
+			    var obst_x = obstacle.x - this.pos.x;
+			    var obst_y = (this.canvas.height - obstacle.y) - (this.canvas.height - this.pos.y);
+			    var obx = obst_x * Math.cos(theta) - obst_y * Math.sin(theta);
+			    var oby = obst_x * Math.sin(theta) + obst_y * Math.cos(theta);
+			    
+			    if (obx < lookahead && obx > 0) {
+					if (Math.abs(oby) < obstacle.rad + simulation.bird_wingspan/2) {
+				    	if (nearest !== null && obx - obstacle.rad >= nearest) {
+							continue;
+				    	}
+				    	//console.log("hit")
 
-			    nearest = obx - obstacle.rad
-			    var e = (radius - Math.abs(oby))/radius
-			    var n = velUnit
-			    if (oby > 0) {
-				n = new Vector(n.y, -n.x)
-			    } else {
-				n = new Vector(-n.y, n.x)
-			    }
-			    e *= this.maxSpeed
-			    force = n.mul(e)
+					    nearest = obx - obstacle.rad
+					    var e = (radius - Math.abs(oby))/radius
+					    var n = velUnit
+					    if (oby > 0) {
+							n = new Vector(n.y, -n.x)
+				    	} else {
+							n = new Vector(-n.y, n.x)
+				    	}
+				    	e *= this.maxSpeed
+				    	force = n.mul(e)
 
-			    var dist = Math.sqrt(obx * obx + oby * oby)
+				    	var dist = Math.sqrt(obx * obx + oby * oby)
 
-			    //console.log(this.vel)
-			    //console.log(dist, radius)
-			    //console.log(obstacle.rad)
-			    if (dist > radius + simulation.bird_wingspan/2) {
-				force.ilimit(this.maxSteeringForce)
+				    
+				    	if (dist > radius + simulation.bird_wingspan/2) {
+							force.ilimit(this.maxSteeringForce)
+				    	}
+					}
 			    }
 			}
-		    }
-		}
-
-		//	console.log(force, this.vel)
-		return force
-	    }
+			
+			return force;
+	    };
 
 
 	    this.inBoidViewRange = function (other) {
