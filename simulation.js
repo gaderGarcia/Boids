@@ -15,8 +15,8 @@
 												wander : 1,
 												avoid : 1
 											};
-	simulation.population 					= 0
-	simulation.flock 						= null
+	simulation.population 					= 0;
+	simulation.flock 						= null;
 
 
 	function Flock()
@@ -146,17 +146,16 @@
 			    var align = this.alignment(boids)
 			    var cohesion = this.cohesion(boids)
 
-		    	    this.acc.iadd(separate.mul(simulation.effect.separate))
+		    	this.acc.iadd(separate.mul(simulation.effect.separate))
 			    this.acc.iadd(align.mul(simulation.effect.align))
 			    this.acc.iadd(cohesion.mul(simulation.effect.cohesion))
 
 			    if (this.acc.mag() == 0) {
-				/* Only wander if other rules weren't applied or didn't
-				   have any effect. */
-				this.acc = this.wander().mul(simulation.effect.wander)
-				this.wandering = true
+				
+					this.acc = this.wander().mul(simulation.effect.wander)
+					this.wandering = true
 			    } else {
-				this.wandering = false
+					this.wandering = false
 			    }
 			} else {
 			    this.wandering = false
